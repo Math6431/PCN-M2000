@@ -2,10 +2,17 @@ BIOS.protocol.beginModule("M-2000C-PCN", 0x0000)
 BIOS.protocol.setExportModuleAircrafts({"M-2000C"})
 
 local defineString = BIOS.util.defineString
+local log = log or {}  -- fallback if log is not defined
+log.info = log.info or function(msg) end  -- fallback to prevent errors if log not available
 
 local function decodePCNRight()
     local li = list_indication(9)
-    if not li then return "      " end
+    if not li then 
+        log.info("PCN_DISP_R: list_indication(9) is nil")
+        return "      " 
+    end
+
+    log.info("PCN_DISP_R: reading segment values")
 
     local raw = string.format("%6s%6s%6s%6s%6s%6s%6s",
         li["PCN_UR_SEG2"] or "",
@@ -31,10 +38,10 @@ local function decodePCNRight()
         result = result .. (segDecode[seg] or " ")
     end
 
+    log.info("PCN_DISP_R decoded: " .. result)
     return result
 end
 
--- Utilisation d'un identifiant fantôme pour provoquer l'écriture dans le buffer partagé 0x72f6
 defineString("INJECT_PCN_DISP_R", decodePCNRight, 6, "PCN", "Inject Right Display via defineString")
 
 BIOS.protocol.endModule()
