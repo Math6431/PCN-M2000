@@ -1,40 +1,57 @@
-BIOS.protocol.beginModule("M-2000C-PCN", 0x0004)
+BIOS.protocol.beginModule("M-2000C-PCN", 0x0005)
 BIOS.protocol.setExportModuleAircrafts({"M-2000C"})
 
-local lfs = require("lfs")
+local defineString = BIOS.util.defineString
 
--- GLOBAL index (corrigé : déclaré en dehors de la fonction)
-if not pcn_scan_index then
-    pcn_scan_index = 0
-end
-
-local max_index = 20
-
-moduleBeingDefined.exportHooks[#moduleBeingDefined.exportHooks+1] = function()
-    if pcn_scan_index > max_index then return end
-
-    local file = io.open(lfs.writedir() .. "/Logs/pcn_index_scan.log", "a")
-    if not file then return end
-
-    local li = list_indication(pcn_scan_index)
-    if not li then
-        file:write(string.format("INDEX %d: nil\n", pcn_scan_index))
-    else
-        file:write(string.format("INDEX %d:\n", pcn_scan_index))
-        local found = false
-        for k, v in pairs(li) do
-            file:write(string.format("  %s = %s\n", tostring(k), tostring(v)))
-            found = true
-        end
-        if not found then
-            file:write("  (empty table)\n")
+-- Fonction qui parse une chaîne style Helios
+local function parseHeliosStringBlock(block)
+    local result = {}
+    for line in string.gmatch(block or "", "[^\n]+") do
+        local key, val = line:match("^([%w_]+)%s*:%s*(.+)$")
+        if key and val then
+            result[key] = val
         end
     end
-
-    file:write("\n")
-    file:close()
-
-    pcn_scan_index = pcn_scan_index + 1
+    return result
 end
+
+-- Décodage des digits à partir du texte brut de list_indication(9)
+local function decodePCNFromString()
+    local raw_str = list_indication(9)
+    if type(raw_str) ~= "string" then return "      " end
+
+    local li = parseHeliosStringBlock(raw_str)
+
+    local segs = {
+        li["PCN_UR_SEG2"] or "",
+        li["PCN_UR_SEG3"] or "",
+        li["PCN_UR_SEG4"] or "",
+        li["PCN_UR_SEG5"] or "",
+        li["PCN_UR_SEG0"] or "",
+        li["PCN_UR_SEG1"] or "",
+        li["PCN_UR_SEG6"] or ""
+    }
+
+    local raw = table.concat(segs)
+    raw = raw:gsub("[a-zA-Z]", "*"):gsub("[^*]", " ")
+
+    local segDecode = {
+        ["****** "] = "0", [" **    "] = "1", ["** ** *"] = "2",
+        ["****  *"] = "3", [" **  **"] = "4", ["* ** **"] = "5",
+        ["* *****"] = "6", ["***    "] = "7", ["*******"] = "8",
+        ["**** **"] = "9"
+    }
+
+    local result = ""
+    for i = 0, 5 do
+        local seg = raw:sub(i*6+1, i*6+6)
+        result = result .. (segDecode[seg] or " ")
+    end
+
+    return result
+end
+
+-- Déclenche l’écriture automatique dans le buffer mémoire partagé
+defineString("INJECT_PCN_DISP_R", decodePCNFromString, 6, "PCN", "Inject PCN R via string decode")
 
 BIOS.protocol.endModule()
