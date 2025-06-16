@@ -1,20 +1,24 @@
 BIOS.protocol.beginModule("M-2000C-PCN", 0x0001)
 BIOS.protocol.setExportModuleAircrafts({"M-2000C"})
 
-local log = log or {}
-log.info = log.info or function(msg) end
+local lfs = require("lfs")
 
--- Hook d'export pour afficher toutes les données de list_indication(9)
 moduleBeingDefined.exportHooks[#moduleBeingDefined.exportHooks+1] = function()
+    local file = io.open(lfs.writedir() .. "/Logs/pcn_debug.log", "a")
+    if not file then return end
+
     local li = list_indication(9)
     if not li then
-        log.info("PCN DEBUG: list_indication(9) is nil")
+        file:write("PCN DEBUG: list_indication(9) is nil\n")
+        file:close()
         return
     end
-    log.info("PCN DEBUG: Dumping list_indication(9)")
-    for k,v in pairs(li) do
-        log.info("PCN DEBUG: " .. tostring(k) .. " = " .. tostring(v))
+
+    file:write("PCN DEBUG: Dumping list_indication(9)\n")
+    for k, v in pairs(li) do
+        file:write(string.format("PCN DEBUG: %s = %s\n", tostring(k), tostring(v)))
     end
+    file:close()
 end
 
 BIOS.protocol.endModule()
