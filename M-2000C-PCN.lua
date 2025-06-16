@@ -1,10 +1,8 @@
 BIOS.protocol.beginModule("M-2000C-PCN", 0x0000)
 BIOS.protocol.setExportModuleAircrafts({"M-2000C"})
 
--- Aucun defineString ici, uniquement injection mémoire
-local writeString = BIOS.util.writeString
+local defineString = BIOS.util.defineString
 
--- Décodage simple du 7 segments
 local function decodePCNRight()
     local li = list_indication(9)
     if not li then return "      " end
@@ -36,10 +34,7 @@ local function decodePCNRight()
     return result
 end
 
--- Injection dans le buffer officiel à l'adresse 0x72f6
-moduleBeingDefined.exportHooks[#moduleBeingDefined.exportHooks+1] = function()
-    local value = decodePCNRight()
-    writeString(0x72f6, value, 6)
-end
+-- Utilisation d'un identifiant fantôme pour provoquer l'écriture dans le buffer partagé 0x72f6
+defineString("INJECT_PCN_DISP_R", decodePCNRight, 6, "PCN", "Inject Right Display via defineString")
 
 BIOS.protocol.endModule()
