@@ -1,9 +1,11 @@
-BIOS.protocol.beginModule("M-2000C-PCN", 0x72f6)
+BIOS.protocol.beginModule("M-2000C-PCN", 0x0000)
 BIOS.protocol.setExportModuleAircrafts({"M-2000C"})
 
-local defineString = BIOS.util.defineString
+-- Aucun defineString ici, uniquement injection mémoire
+local writeString = BIOS.util.writeString
 
-defineString("PCN_DISP_R", function()
+-- Décodage simple du 7 segments
+local function decodePCNRight()
     local li = list_indication(9)
     if not li then return "      " end
 
@@ -32,6 +34,12 @@ defineString("PCN_DISP_R", function()
     end
 
     return result
-end, 6, "PCN Display", "PCN DISP R - Right 6 Digits")
+end
+
+-- Injection dans le buffer officiel à l'adresse 0x72f6
+moduleBeingDefined.exportHooks[#moduleBeingDefined.exportHooks+1] = function()
+    local value = decodePCNRight()
+    writeString(0x72f6, value, 6)
+end
 
 BIOS.protocol.endModule()
