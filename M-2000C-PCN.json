@@ -1,17 +1,20 @@
 {
-    "PCN_DISP_R": {
-        "category": "PCN",
-        "control_type": "string",
-        "description": "Right 6 digits of PCN",
-        "identifier": "PCN_DISP_R",
-        "max_length": 6,
-        "outputs": [
-            {
-                "type": "string",
-                "max_length": 6,
-                "address": 29430,
-                "description": "PCN DISP R right 6 digits"
-            }
-        ]
+    "module": "M-2000C-PCN",
+    "controls": {
+        "PCN_DISP_R": {
+            "category": "PCN",
+            "control_type": "string",
+            "description": "Right 6 digits of PCN",
+            "identifier": "PCN_DISP_R",
+            "max_length": 6,
+            "outputs": [
+                {
+                    "type": "string",
+                    "max_length": 6,
+                    "address": 29430,
+                    "description": "PCN DISP R right 6 digits"
+                }
+            ]
+        }
     }
 }
