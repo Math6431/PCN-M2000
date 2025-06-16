@@ -3,12 +3,10 @@ BIOS.protocol.setExportModuleAircrafts({"M-2000C"})
 
 local defineString = BIOS.util.defineString
 
--- Extraction des 6 digits 7 segments (droite) depuis list_indication(9)
 defineString("PCN_DISP_R", function()
     local li = list_indication(9)
     if not li then return "      " end
 
-    -- Collecte brute des segments Helios (ordre spécifique)
     local raw = string.format("%6s%6s%6s%6s%6s%6s%6s",
         li["PCN_UR_SEG2"] or "",
         li["PCN_UR_SEG3"] or "",
@@ -18,10 +16,8 @@ defineString("PCN_DISP_R", function()
         li["PCN_UR_SEG1"] or "",
         li["PCN_UR_SEG6"] or "")
 
-    -- Décodage simple en remplaçant tous les caractères allumés par "*"
     raw = raw:gsub("[a-zA-Z]", "*"):gsub("[^*]", " ")
 
-    -- Fonction de décodage très simplifiée
     local segDecode = {
         ["****** "] = "0", [" **    "] = "1", ["** ** *"] = "2",
         ["****  *"] = "3", [" **  **"] = "4", ["* ** **"] = "5",
