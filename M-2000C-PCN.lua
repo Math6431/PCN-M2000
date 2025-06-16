@@ -1,32 +1,35 @@
-BIOS.protocol.beginModule("M-2000C-PCN", 0x0002)
+BIOS.protocol.beginModule("M-2000C-PCN", 0x0003)
 BIOS.protocol.setExportModuleAircrafts({"M-2000C"})
 
 local lfs = require("lfs")
+local index = 0
+local max_index = 20
 
 moduleBeingDefined.exportHooks[#moduleBeingDefined.exportHooks+1] = function()
-    for i = 0, 20 do
-        local li = list_indication(i)
-        local file = io.open(lfs.writedir() .. "/Logs/pcn_debug_index_" .. i .. ".log", "a")
-        if not file then return end
+    if index > max_index then return end
 
-        if li then
-            local hasData = false
-            for k, v in pairs(li) do
-                if not hasData then
-                    file:write(string.format("INDEX %d:
-", i))
-                    hasData = true
-                end
-                file:write(string.format("  %s = %s\n", tostring(k), tostring(v)))
-            end
-            if not hasData then
-                file:write(string.format("INDEX %d: empty table\n", i))
-            end
-        else
-            file:write(string.format("INDEX %d: nil\n", i))
+    local file = io.open(lfs.writedir() .. "/Logs/pcn_index_scan.log", "a")
+    if not file then return end
+
+    local li = list_indication(index)
+    if not li then
+        file:write(string.format("INDEX %d: nil\n", index))
+    else
+        file:write(string.format("INDEX %d:\n", index))
+        local found = false
+        for k, v in pairs(li) do
+            file:write(string.format("  %s = %s\n", tostring(k), tostring(v)))
+            found = true
         end
-        file:close()
+        if not found then
+            file:write("  (empty table)\n")
+        end
     end
+
+    file:write("\n")
+    file:close()
+
+    index = index + 1
 end
 
 BIOS.protocol.endModule()
